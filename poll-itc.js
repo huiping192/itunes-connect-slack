@@ -55,7 +55,7 @@ function _checkAppStatus(version) {
 		}
 
 		// store latest app info in database
-		db.set(appInfoKey, currentAppInfo.toString(), function(){});
+		db.set(appInfoKey, JSON.stringify(currentAppInfo), function(){});
 
 	});
 
