@@ -45,9 +45,9 @@ function _checkAppStatus(version) {
 		let lastAppInfo = JSON.parse(data);
 
 		if (!data) {
-			test(currentAppInfo);
+			sendSlack(currentAppInfo);
 		} else if (lastAppInfo.status != currentAppInfo.status || debug) {
-			test(currentAppInfo);
+			sendSlack(currentAppInfo);
 		}else if (currentAppInfo) {
 			console.log(`Current status \"${currentAppInfo.status}\" matches previous status. AppName: \"${currentAppInfo.name}\"`);
 		} else {
@@ -61,7 +61,13 @@ function _checkAppStatus(version) {
 
 }
 
-function test(currentAppInfo) {
+function sendSlack(currentAppInfo) {
+	// PINTORを外す
+	if(currentAppInfo.appId == 1284698988) {
+		return;
+	}
+
+
 	var submissionStartkey = 'submissionStart' + currentAppInfo.appId;
 
 	let preDateString = db.get(submissionStartkey);
