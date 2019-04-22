@@ -35,7 +35,6 @@ function _checkAppStatus(version) {
 	var currentAppInfo = version["editVersion"] ? version["editVersion"] : version["liveVersion"];
 
 	var appInfoKey = 'appInfo-' + currentAppInfo.appId;
-	var submissionStartkey = 'submissionStart' + currentAppInfo.appId;
 
 	db.get(appInfoKey, function(err, data){
 		if (err) {
@@ -45,16 +44,11 @@ function _checkAppStatus(version) {
 
 		let lastAppInfo = JSON.parse(data);
 
-		if (!data || lastAppInfo.status != currentAppInfo.status || debug) {
-			let preDateString = db.get(submissionStartkey);
-			poster.slack(currentAppInfo, new Date(preDateString));
-
-			// store submission start time`
-			if (currentAppInfo.status == "Waiting For Review") {
-				let now = new Date();
-				db.set(submissionStartkey, now.toString(), function(){});
-			}
-		} else if (currentAppInfo) {
+		if (!data) {
+			test(currentAppInfo);
+		} else if (lastAppInfo.status != currentAppInfo.status || debug) {
+			test(currentAppInfo);
+		}else if (currentAppInfo) {
 			console.log(`Current status \"${currentAppInfo.status}\" matches previous status. AppName: \"${currentAppInfo.name}\"`);
 		} else {
 			console.log("Could not fetch app status");
@@ -66,6 +60,20 @@ function _checkAppStatus(version) {
 	});
 
 }
+
+function test(currentAppInfo) {
+	var submissionStartkey = 'submissionStart' + currentAppInfo.appId;
+
+	let preDateString = db.get(submissionStartkey);
+	poster.slack(currentAppInfo, new Date(preDateString));
+
+	// store submission start time`
+	if (currentAppInfo.status == "Waiting For Review") {
+		let now = new Date();
+		db.set(submissionStartkey, now.toString(), function(){});
+	}
+}
+
 
 if(!pollIntervalSeconds) {
 	pollIntervalSeconds = 60 * 2;
