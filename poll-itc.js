@@ -1,8 +1,12 @@
 var poster = require('./post-update.js');
-var dirty = require('dirty');
-var db = dirty('kvstore.db');
-var debug = false
-var pollIntervalSeconds = process.env.POLL_TIME
+var db = initDb();
+var debug = false;
+var pollIntervalSeconds = process.env.POLL_TIME;
+
+function initDb() {
+	return require('redis').createClient(process.env.REDIS_URL);
+}
+
 
 function checkAppStatus() {
 	console.log("Fetching latest app status...")
@@ -12,12 +16,12 @@ function checkAppStatus() {
 	exec('ruby get-app-status.rb', function (err, stdout, stderr) {
 		if (stdout) {
 			// compare new app info with last one (from database)
-			console.log(stdout)
+			console.log(stdout);
 			var versions = JSON.parse(stdout);
 
 			for(let version of versions) {
-  				_checkAppStatus(version);
-			}			
+				_checkAppStatus(version);
+			}
 		}
 		else {
 			console.log("There was a problem fetching the status of the app!");
@@ -33,24 +37,34 @@ function _checkAppStatus(version) {
 	var appInfoKey = 'appInfo-' + currentAppInfo.appId;
 	var submissionStartkey = 'submissionStart' + currentAppInfo.appId;
 
-	var lastAppInfo = db.get(appInfoKey);
-	if (!lastAppInfo || lastAppInfo.status != currentAppInfo.status || debug) {
-		poster.slack(currentAppInfo, db.get(submissionStartkey));
-
-	    // store submission start time`
-		if (currentAppInfo.status == "Waiting For Review") {
-			db.set(submissionStartkey, new Date());
+	db.get(appInfoKey, function(err, data){
+		if (err) {
+			console.log(err);
+			return;
 		}
-	}
-	else if (currentAppInfo) {
-		console.log(`Current status \"${currentAppInfo.status}\" matches previous status. AppName: \"${currentAppInfo.name}\"`);
-	}
-	else {
-		console.log("Could not fetch app status");
-	}
 
-	// store latest app info in database
-	db.set(appInfoKey, currentAppInfo);
+		let lastAppInfo = JSON.parse(data);
+
+		if (!data || lastAppInfo.status != currentAppInfo.status || debug) {
+			let preDateString = db.get(submissionStartkey);
+			poster.slack(currentAppInfo, new Date(preDateString));
+
+			// store submission start time`
+			if (currentAppInfo.status == "Waiting For Review") {
+				let now = new Date();
+				db.set(submissionStartkey, now.toString(), function(){});
+			}
+		} else if (currentAppInfo) {
+			console.log(`Current status \"${currentAppInfo.status}\" matches previous status. AppName: \"${currentAppInfo.name}\"`);
+		} else {
+			console.log("Could not fetch app status");
+		}
+
+		// store latest app info in database
+		db.set(appInfoKey, currentAppInfo.toString(), function(){});
+
+	});
+
 }
 
 if(!pollIntervalSeconds) {
