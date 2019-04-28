@@ -2,8 +2,9 @@
   "name": "itunes-connect-slack",
   "version": "1.0.0",
   "description": "itunes-connect-slack\r --------------------",
-  "main": "poll-itc.js",
+  "main": "app.js",
   "scripts": {
+    "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,6 +20,7 @@
   "dependencies": {
     "@slack/client": "^3.16.0",
     "dirty": "^1.1.0",
-    "moment": "^2.24.0"
+    "moment": "^2.24.0",
+    "express": "^4.16.3"
   }
 }

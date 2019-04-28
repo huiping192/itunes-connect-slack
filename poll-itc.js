@@ -1,10 +1,10 @@
 var poster = require('./post-update.js');
 var dirty = require('dirty');
-var db = dirty('kvstore.db');
+var db = dirty(os.tmpdir() + 'kvstore.db');
 var debug = false
 var pollIntervalSeconds = process.env.POLL_TIME
 
-function checkAppStatus() {
+ function checkAppStatus() {
 	console.log("Fetching latest app status...")
 
 	// invoke ruby script to grab latest app status
@@ -53,9 +53,7 @@ function _checkAppStatus(version) {
 	db.set(appInfoKey, currentAppInfo);
 }
 
-if(!pollIntervalSeconds) {
-	pollIntervalSeconds = 60 * 2;
-}
 
-setInterval(checkAppStatus, pollIntervalSeconds * 1000);
-checkAppStatus();
+module.exports = {
+	check: checkAppStatus
+  };
